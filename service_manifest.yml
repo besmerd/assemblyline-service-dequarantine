@@ -1,0 +1,26 @@
+name: Dequarantine
+version: $SERVICE_TAG
+description: Extract quarantined files by various AV products
+
+accepts: quarantine/.*
+rejects: empty|metadata/.*
+
+stage: EXTRACT
+category: Extraction
+
+file_required: true
+timeout: 60
+
+enabled: true
+
+heuristics:
+  - description: This is a demo heuristic
+    filetype: "*"
+    heur_id: 1
+    name: Demo
+    score: 100
+
+docker_config:
+  image: ${REGISTRY}besmerd/assemblyline-service-dequarantine:$SERVICE_TAG
+  cpu_cores: 1.0
+  ram_mb: 1024
