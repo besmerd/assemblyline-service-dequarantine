@@ -2,14 +2,11 @@ name: Deploy Docker Image
 
 on:
   push:
-    branches: [ 'main' ]
-    tags: [ 'v\d+.\d+.\d+.(stable|dev)\d+' ]
+    branch: [ 'main' ]
 
 env:
   REGISTRY: docker.io
   IMAGE_NAME: ${{ github.repository }}
-  BUILD_TAG: ${{ github.ref_name/v// }}
-  BUILD_TYPE: ${{ contains(github.ref_name, '.stable') && 'stable' || 'latest' }}
 
 jobs:
 
@@ -29,16 +26,25 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Set build variables
+        run: |
+          echo "BUILD_TAG=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+          if [[ ${{ github.ref_name }} == *.stable* ]]; then
+            echo "BUILD_TYPE=stable" >> "$GITHUB_ENV"
+          else
+            echo "BUILD_TYPE=latest" >> "$GITHUB_ENV"
+          fi
+
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile
-          push: true
+          push: ${{ contains(github.ref, 'refs/tags/v') }}
           build-args: |
             version=${{ env.BUILD_TAG }}
             branch=${{ env.BUILD_TYPE }}
 
           tags: |
-            ${{ github.actor }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_TAG }}
-            ${{ github.actor }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_TYPE }}
+            ${{ env.IMAGE_NAME }}:${{ env.BUILD_TAG }}
+            ${{ env.IMAGE_NAME }}:${{ env.BUILD_TYPE }}
