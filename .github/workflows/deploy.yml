@@ -2,11 +2,14 @@ name: Deploy Docker Image
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ 'main' ]
+    tags: [ 'v\d+.\d+.\d+.(stable|dev)\d+' ]
 
 env:
   REGISTRY: docker.io
   IMAGE_NAME: ${{ github.repository }}
+  BUILD_TAG: ${{ github.ref_name/v// }}
+  BUILD_TYPE: ${{ contains(github.ref_name, '.stable') && 'stable' || 'latest' }}
 
 jobs:
 
@@ -31,5 +34,11 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
-          push: false
-          tags: ${{ github.actor }}/${{ env.IMAGE_NAME }}:latest
+          push: true
+          build-args: |
+            version=${{ env.BUILD_TAG }}
+            branch=${{ env.BUILD_TYPE }}
+
+          tags: |
+            ${{ github.actor }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_TAG }}
+            ${{ github.actor }}/${{ env.IMAGE_NAME }}:${{ env.BUILD_TYPE }}
